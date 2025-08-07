@@ -1,0 +1,135 @@
+dium"/>
+            <command>OK</command>
+            <command>SCREEN</command>
+            <command>ITEM</command>
+            <command>HELP</command>
+        </softbutton>
+        <button name="LEFT">
+        </button>
+        <button name="RIGHT">
+        </button>
+        <button name="UP">
+        </button>
+        <button name="DOWN">
+        </button>
+        <button name="SELECT">
+        </button>
+        <button name="0">
+            <chars>
+                <char/>
+                <char>0</char>
+            </chars>
+        </button>
+        <button name="1">
+            <chars>
+                <char>.</char>
+                <char>,</char>
+                <char>?</char>
+                <char>!</char>
+                <char>:</char>
+                <char>;</char>
+                <char>-</char>
+                <char>+</char>
+                <char>#</char>
+                <char>*</char>
+                <char>(</char>
+                <char>)</char>
+                <char>'</char>
+                <char>"</char>
+                <char>_</char>
+                <char>@</char>
+                <char>&amp;</char>
+                <char>$</char>
+                <char>%</char>
+                <char>/</char>
+                <char>&lt;</char>
+                <char>&gt;</char>
+                <char>=</char>
+                <char>1</char>
+            </chars>
+            <chars input="123">
+                <char>1</char>
+                <char>.</char>
+                <char>-</char>
+                <char>(</char>
+                <char>)</char>
+                <char>+</char>
+            </chars>
+        </button>
+        <button name="2">
+            <chars>
+                <char>a</char>
+                <char>b</char>
+                <char>c</char>
+                <char>2</char>
+            </chars>
+        </button>
+        <button name="3">
+            <chars>
+                <char>d</char>
+                <char>e</char>
+                <char>f</char>
+                <char>3</char>
+            </chars>
+        </button>
+        <button name="4">
+            <chars>
+                <char>g</char>
+                <char>h</char>
+                <char>i</char>
+                <char>4</char>
+            </chars>
+        </button>
+        <button name="5">
+            <chars>
+                <char>j</char>
+                <char>k</char>
+                <char>l</char>
+                <char>5</char>
+            </chars>
+        </button>
+        <button name="6">
+            <chars>
+                <char>m</char>
+                <char>n</char>
+                <char>o</char>
+                <char>6</char>
+            </chars>
+        </button>
+        <button name="7">
+            <chars>
+                <char>p</char>
+                <char>q</char>
+                <char>r</char>
+                <char>s</char>
+                <char>7</char>
+            </chars>
+        </button>
+        <button name="8">
+            <chars>
+                <char>t</char>
+                <char>u</char>
+                <char>v</char>
+                <char>8</char>
+            </chars>
+        </button>
+        <button name="9">
+            <chars>
+                <char>w</char>
+                <char>x</char>
+                <char>y</char>
+                <char>z</char>
+                <char>9</char>
+            </chars>
+        </button>
+        <button name="ASTERISK">
+            <chars>
+                <char>*</char>
+                <char>+</char>
+            </chars>
+        </button>
+        <button name="POUND" modeChange="true">
+        </button>
+    </input>
+</device>
+

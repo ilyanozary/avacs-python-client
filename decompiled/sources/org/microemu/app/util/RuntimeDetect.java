@@ -1,0 +1,73 @@
+package org.microemu.app.util;
+
+/* loaded from: avacs.jar:org/microemu/app/util/RuntimeDetect.class */
+public class RuntimeDetect {
+    private static boolean java13 = false;
+    private static boolean java14 = false;
+    private static boolean java15 = false;
+    private static boolean inEclipseUnitTests = false;
+    private static boolean runtimeDetected = false;
+
+    private static synchronized void detect() {
+        if (runtimeDetected) {
+            return;
+        }
+        if (detectJava14()) {
+            detectJava15();
+            detectEclipse();
+        }
+        runtimeDetected = true;
+    }
+
+    private static synchronized boolean detectJava14() {
+        try {
+            Class.forName("java.lang.StackTraceElement");
+            java14 = true;
+        } catch (Throwable th) {
+        }
+        return java14;
+    }
+
+    private static boolean detectJava15() {
+        try {
+            java5Function();
+            java15 = true;
+        } catch (Throwable th) {
+        }
+        return java15;
+    }
+
+    private static boolean java5Function() {
+        return Thread.currentThread().getStackTrace() != null;
+    }
+
+    private static void detectEclipse() {
+        StackTraceElement[] ste = new Throwable().getStackTrace();
+        for (StackTraceElement s : ste) {
+            if (s.getClassName().startsWith("org.eclipse.jdt")) {
+                inEclipseUnitTests = true;
+                return;
+            }
+        }
+    }
+
+    public static boolean isJava13() {
+        detect();
+        return java13;
+    }
+
+    public static boolean isJava14() {
+        detect();
+        return java14;
+    }
+
+    public static boolean isJava15() {
+        detect();
+        return java15;
+    }
+
+    public static boolean isInEclipseUnitTests() {
+        detect();
+        return inEclipseUnitTests;
+    }
+}

@@ -1,0 +1,43 @@
+package org.microemu.device;
+
+import java.util.Map;
+import java.util.Vector;
+import javax.microedition.lcdui.Image;
+import org.microemu.device.ui.UIFactory;
+
+/* loaded from: avacs.jar:org/microemu/device/Device.class */
+public interface Device {
+    void init();
+
+    void destroy();
+
+    String getName();
+
+    InputMethod getInputMethod();
+
+    FontManager getFontManager();
+
+    DeviceDisplay getDeviceDisplay();
+
+    UIFactory getUIFactory();
+
+    Image getNormalImage();
+
+    Image getOverImage();
+
+    Image getPressedImage();
+
+    Vector getSoftButtons();
+
+    Vector getButtons();
+
+    boolean hasPointerEvents();
+
+    boolean hasPointerMotionEvents();
+
+    boolean hasRepeatEvents();
+
+    boolean vibrate(int i);
+
+    Map getSystemProperties();
+}
