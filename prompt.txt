@@ -1,54 +1,54 @@
-# پروژه: ساخت ربات هوش مصنوعی برای AVACS Live Chat
+# Project: Build an AI Bot for AVACS Live Chat
 
-## 🎯 هدف:
-ساخت یک ربات هوشمند که به عنوان کلاینت وارد چت‌روم نرم‌افزار AVACS Live Chat بشود (نوشته‌شده با Java ME / J2ME)، پیام‌های کاربران را دریافت کند و با استفاده از ChatGPT API پاسخ دهد. همچنین قابلیت تولید تصویر و ارسال آن در چت‌روم را داشته باشد.
+## Goal
+Build an intelligent bot that logs into the AVACS Live Chat application (Java ME / J2ME), receives user messages, replies using the ChatGPT API, and can generate and send images.
 
-## 📦 ورودی‌ها:
-- فایل `.jar` برنامه AVACS (کلاینت J2ME)
-- اطلاعات مربوط به کلاس‌های شبکه: استفاده از `javax.microedition.io.SocketConnection`, `Connector`, `HttpConnection`, `SSLConnection`, و ...
-- ابزار `org.microemu` برای شبیه‌سازی کلاینت روی PC
+## Inputs
+- The AVACS client `.jar` file (J2ME)
+- Information about networking classes: `javax.microedition.io.SocketConnection`, `Connector`, `HttpConnection`, `SSLConnection`, etc.
+- The `org.microemu` emulator to run the client on PC
 
-## 🧩 مراحل انجام کار:
+## Plan
 
-### مرحله ۱: Decompile و تحلیل فایل JAR
-- فایل JAR را با JD-GUI یا JADX decompile کن.
-- بررسی کن که برنامه از کدام پروتکل برای اتصال به سرور استفاده می‌کند (Socket, HTTP, UDP)
-- مسیرهایی مثل `Connector.open(...)`، `SocketConnection`, `HttpConnection` و `DataInputStream.read()` را دنبال کن.
-- IP و پورت سرور را استخراج کن.
-- ساختار پیام‌هایی که به سرور ارسال و از آن دریافت می‌شود را تحلیل کن.
-- در صورت نیاز، برنامه را در MicroEmulator اجرا کن و ترافیک شبکه را با Wireshark یا `tcpdump` بررسی کن.
+### Step 1: Decompile and analyze the JAR
+- Decompile the JAR using JD-GUI or JADX.
+- Determine the protocol used to connect to the server (Socket, HTTP, UDP).
+- Trace paths like `Connector.open(...)`, `SocketConnection`, `HttpConnection`, and `DataInputStream.read()`.
+- Extract the server IP/domain and port(s).
+- Analyze the structure of messages sent to and received from the server.
+- If needed, run the app in MicroEmulator and inspect network traffic with Wireshark or `tcpdump`.
 
-### مرحله ۲: ساخت کلاینت بات در جاوا
-- با استفاده از اطلاعات مرحله قبل، یک کلاینت ساده بساز که با استفاده از همان پروتکل به سرور AVACS متصل شود.
-- این کلاینت باید بتواند:
-  - لاگین کند
-  - وارد چت‌روم شود
-  - پیام‌های دریافتی را چاپ کند
-  - پیام‌ها را ارسال کند
+### Step 2: Build the bot client (Java or Python)
+- Using the findings from Step 1, implement a simple client that connects to the AVACS server using the same protocol.
+- The client must be able to:
+  - Log in
+  - Join a chat room
+  - Print received messages
+  - Send messages
 
-### مرحله ۳: اتصال بات به ChatGPT
-- هر پیام متنی که از کاربران دریافت می‌شود را به OpenAI API بفرست.
-- پاسخ را از ChatGPT دریافت کن و آن را در چت‌روم ارسال کن.
+### Step 3: Connect the bot to ChatGPT
+- Send every user text message to the OpenAI API.
+- Receive the response from ChatGPT and post it back to the chat room.
 
-### مرحله ۴: قابلیت تولید عکس
-- اگر کاربر پیامی شامل `/image <prompt>` فرستاد:
-  - از DALL·E یا مدل Stable Diffusion برای تولید عکس استفاده کن.
-  - عکس را ذخیره کن و اگر سیستم ارسال عکس را پشتیبانی می‌کند، آن را به چت‌روم ارسال کن (در غیر اینصورت لینک آن را بفرست).
+### Step 4: Image generation capability
+- If a user sends `/image <prompt>`:
+  - Use DALL·E or a Stable Diffusion model to generate an image.
+  - Save the image and, if supported, send it to the chat room (otherwise send a link).
 
-### مرحله ۵: اجرای دائم روی VPS
-- کد نهایی باید به صورت یک برنامه CLI (Java یا Python) اجرا شود.
-- باید بتوان آن را روی Ubuntu VPS با `java -jar` یا `python main.py` اجرا کرد.
-- بهتر است از ابزارهایی مثل `tmux`, `systemd`, یا `supervisor` برای اجرای دائمی استفاده شود.
+### Step 5: Run continuously on a VPS
+- The final code must run as a CLI program (Java or Python).
+- It should run on an Ubuntu VPS using `java -jar` or `python main.py`.
+- Use tools like `tmux`, `systemd`, or `supervisor` for persistent execution.
 
-## ⚠️ الزامات و محدودیت‌ها
-- به هیچ وجه از OCR، اسکرین‌شات یا مانیتورینگ GUI استفاده نشود.
-- تمام تعامل‌ها باید در سطح شبکه و از طریق پروتکل مستقیم باشد.
-- اگر ارتباط رمزنگاری‌شده باشد (SSL/TLS)، آن را تحلیل یا bypass کن یا از کتابخانه‌های جاوا برای ارتباط امن استفاده کن.
+## Requirements and constraints
+- Do not use OCR, screenshots, or GUI monitoring under any circumstances.
+- All interactions must happen at the network layer via the direct protocol.
+- If the connection is encrypted (SSL/TLS), implement it using standard libraries or analyze the protocol to interoperate correctly.
 
-## 🎁 خروجی نهایی مورد انتظار:
-- یک فایل `BotClient.java` یا `bot.py` که:
-  - به سرور چت متصل می‌شود
-  - پیام کاربران را دریافت می‌کند
-  - از ChatGPT پاسخ می‌گیرد
-  - پاسخ را ارسال می‌کند
-  - به درخواست تصویر نیز پاسخ می‌دهد
+## Expected final output
+- A `BotClient.java` or `bot.py` that:
+  - Connects to the chat server
+  - Receives user messages
+  - Gets responses from ChatGPT
+  - Sends responses back to the chat
+  - Handles image requests
