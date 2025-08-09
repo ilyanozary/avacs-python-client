@@ -30,6 +30,14 @@ class AvacsClient:
         self.password = "test123"
         self.socket = None       # Active socket connection
 
+        # AVACS socket framing markers
+        self.START_MARKER = b"\x01\x02\x03\x07\x07"
+        self.END_MARKER   = b"\x01\x07\x08\x09\x09"
+
+        # Optional: pre-encoded hello payload hex captured from official client
+        # You can set via environment variable AVACS_HELLO_HEX="010203..."
+        self.hello_payload_hex = os.getenv("AVACS_HELLO_HEX")
+
     def connect(self):
         for host, port in self.servers:
             if self.use_proxy:
@@ -37,9 +45,9 @@ class AvacsClient:
                     try:
                         print(f"\nTrying to connect to {host}:{port} via SOCKS5 proxy on port {proxy_port}...")
                         socks.set_default_proxy(socks.SOCKS5, "127.0.0.1", proxy_port)
-                        socket.socket = socks.socksocket
-
-                        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        
+                        # Use socks.socksocket explicitly for proxy
+                        self.socket = socks.socksocket()
                         self.socket.settimeout(10)
 
                         if self.try_connection(host, port):
@@ -50,9 +58,13 @@ class AvacsClient:
 
             try:
                 print(f"\nTrying direct connection to {host}:{port}...")
-                socket.socket = socks.socksocket
-                socks.set_default_proxy()  # Remove proxy settings
+                # Clear any default proxy config for direct connection
+                try:
+                    socks.set_default_proxy(None)
+                except Exception:
+                    pass
 
+                # Use standard socket for direct connection
                 self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.socket.settimeout(10)
 
@@ -66,58 +78,8 @@ class AvacsClient:
                 self.socket.connect((host, port))
                 print(f"Connected to {host}:{port}!")
 
-                # Handshake messages to be sent after connection
-                handshake_messages = [
-                    bytes([15]) + len(f"1|{self.username}|{self.password}").to_bytes(1, 'big') + 
-                        f"1|{self.username}|{self.password}".encode(),
-
-                    bytes([10]) + len("CONNECT").to_bytes(1, 'big') + b"CONNECT",
-
-                    bytes([40]) + len(f"1|{self.username}").to_bytes(1, 'big') + 
-                        f"1|{self.username}".encode(),
-
-                    bytes([100]),
-
-                    bytes([110]) + len(f"1|{self.username}").to_bytes(1, 'big') + 
-                        f"1|{self.username}".encode(),
-                ]
-
-                print("\nStarting handshake attempts...")
-                for i, msg in enumerate(handshake_messages, 1):
-                    print(f"\nAttempt {i}/{len(handshake_messages)}")
-                    print(f"Sending: {msg.hex()}")
-                    self.socket.send(msg)
-
-                    self.socket.settimeout(3)  # Short timeout for each attempt
-                    try:
-                        response = self.socket.recv(1024)
-                        print(f"Response hex: {response.hex()}")
-                        print(f"Response text: {response.decode('utf-8', errors='ignore')}")
-                        if response:
-                            print("Got response! Analyzing...")
-                            self.analyze_response(response)
-                            if self.connected:
-                                break
-                    except socket.timeout:
-                        print("No response (timeout)")
-                    except Exception as e:
-                        print(f"Error during handshake: {e}")
-
-                self.socket.settimeout(10)  # Restore normal timeout
-
-                for msg in handshake_messages:
-                    print(f"\nTrying handshake with: {msg}")
-                    self.socket.send(msg)
-
-                    try:
-                        response = self.socket.recv(1024)
-                        print(f"Got response: {response}")
-                        if response:
-                            break
-                    except socket.timeout:
-                        print("No response to this handshake")
-
-                self.receive_messages()
+                # Post-connect: send hello (if configured) and start reading frames
+                self.post_connect_handshake()
                 return True
 
             except socket.timeout:
@@ -128,7 +90,10 @@ class AvacsClient:
                 print(f"Error connecting to {host}:{port}: {e}")
 
             if self.socket:
-                self.socket.close()
+                try:
+                    self.socket.close()
+                except Exception:
+                    pass
                 self.socket = None
 
         print("\nCould not connect to any server!")
@@ -146,45 +111,9 @@ class AvacsClient:
             self.socket.connect((host, port))
             print(f"Connected to {host}:{port}!")
 
-            handshake_messages = [
-                bytes([10]) + len("CONNECT").to_bytes(1, 'big') + b"CONNECT",
-
-                bytes([15]) + len(f"1|{self.username}|{self.password}").to_bytes(1, 'big') + 
-                    f"1|{self.username}|{self.password}".encode(),
-
-                bytes([40]) + len(f"1|{self.username}").to_bytes(1, 'big') + 
-                    f"1|{self.username}".encode(),
-
-                bytes([100]),
-
-                bytes([110]) + len(f"1|{self.username}").to_bytes(1, 'big') + 
-                    f"1|{self.username}".encode(),
-            ]
-
-            print("\nStarting handshake attempts...")
-            for i, msg in enumerate(handshake_messages, 1):
-                print(f"\nAttempt {i}/{len(handshake_messages)}")
-                print(f"Sending: {msg.hex()}")
-                self.socket.send(msg)
-
-                self.socket.settimeout(3)
-                try:
-                    response = self.socket.recv(1024)
-                    print(f"Response hex: {response.hex()}")
-                    print(f"Response text: {response.decode('utf-8', errors='ignore')}")
-                    if response:
-                        print("Got response! Analyzing...")
-                        self.analyze_response(response)
-                        if self.connected:
-                            self.socket.settimeout(10)
-                            self.receive_messages()
-                            return True
-                except socket.timeout:
-                    print("No response (timeout)")
-                except Exception as e:
-                    print(f"Error during handshake: {e}")
-
-            return False
+            # Post-connect: send hello (if configured) and start reading frames
+            self.post_connect_handshake()
+            return True
 
         except socket.timeout:
             print(f"Connection to {host}:{port} timed out")
@@ -194,11 +123,75 @@ class AvacsClient:
             print(f"Error connecting to {host}:{port}: {e}")
 
         if self.socket:
-            self.socket.close()
+            try:
+                self.socket.close()
+            except Exception:
+                pass
             self.socket = None
 
         return False
 
+    # --- AVACS socket protocol helpers ---
+
+    def send_framed(self, payload: bytes):
+        try:
+            frame = self.START_MARKER + payload + self.END_MARKER
+            print(f"Sending framed payload (hex): {payload.hex()}")
+            self.socket.sendall(frame)
+        except Exception as e:
+            print(f"Error sending framed payload: {e}")
+
+    def post_connect_handshake(self):
+        # For now we rely on a captured hello payload.
+        if self.hello_payload_hex:
+            try:
+                payload = bytes.fromhex(self.hello_payload_hex.replace(" ", ""))
+                self.send_framed(payload)
+            except ValueError:
+                print("Invalid AVACS_HELLO_HEX format. Expected hex string without 0x.")
+        else:
+            print("No hello payload configured. Set AVACS_HELLO_HEX to captured hello bytes to receive messages.")
+        self.receive_frames()
+
+    def receive_frames(self):
+        print("\nWaiting for frames...")
+        buf = bytearray()
+        while True:
+            try:
+                chunk = self.socket.recv(4096)
+                if not chunk:
+                    print("Connection closed by server")
+                    break
+                buf.extend(chunk)
+
+                while True:
+                    s = buf.find(self.START_MARKER)
+                    if s == -1:
+                        # keep buffer size sane
+                        if len(buf) > 65536:
+                            del buf[:-8192]
+                        break
+                    e = buf.find(self.END_MARKER, s + len(self.START_MARKER))
+                    if e == -1:
+                        # wait for more data
+                        break
+                    payload = bytes(buf[s + len(self.START_MARKER): e])
+                    print(f"\n[Frame] payload hex: {payload.hex()}")
+                    try:
+                        txt = payload.decode('utf-8', errors='ignore')
+                        if txt.strip():
+                            print(f"[Frame] as text: {txt}")
+                    except Exception:
+                        pass
+                    # drop processed
+                    del buf[: e + len(self.END_MARKER)]
+            except socket.timeout:
+                print("No data received (timeout)")
+            except Exception as e:
+                print(f"Error receiving frames: {e}")
+                break
+
+    # --- Legacy text processing (kept for reference/testing) ---
     def receive_messages(self):
         print("\nWaiting for messages...")
         while True:
