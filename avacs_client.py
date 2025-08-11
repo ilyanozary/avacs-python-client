@@ -34,9 +34,10 @@ class AvacsClient:
         self.START_MARKER = b"\x01\x02\x03\x07\x07"
         self.END_MARKER   = b"\x01\x07\x08\x09\x09"
 
-        # Optional: pre-encoded hello payload hex captured from official client
-        # You can set via environment variable AVACS_HELLO_HEX="010203..."
+        # Optional: pre-encoded payloads captured from the official client
+        # HELLO (identify) and LOGIN can be provided as hex strings
         self.hello_payload_hex = os.getenv("AVACS_HELLO_HEX")
+        self.login_payload_hex = os.getenv("AVACS_LOGIN_HEX")
 
     def connect(self):
         for host, port in self.servers:
@@ -142,15 +143,30 @@ class AvacsClient:
             print(f"Error sending framed payload: {e}")
 
     def post_connect_handshake(self):
-        # For now we rely on a captured hello payload.
+        # Send HELLO if provided
+        sent_any = False
         if self.hello_payload_hex:
             try:
                 payload = bytes.fromhex(self.hello_payload_hex.replace(" ", ""))
                 self.send_framed(payload)
+                sent_any = True
             except ValueError:
                 print("Invalid AVACS_HELLO_HEX format. Expected hex string without 0x.")
         else:
             print("No hello payload configured. Set AVACS_HELLO_HEX to captured hello bytes to receive messages.")
+
+        # Optionally send LOGIN right after HELLO
+        if self.login_payload_hex:
+            try:
+                time.sleep(0.2)
+                payload = bytes.fromhex(self.login_payload_hex.replace(" ", ""))
+                self.send_framed(payload)
+                sent_any = True
+            except ValueError:
+                print("Invalid AVACS_LOGIN_HEX format. Expected hex string without 0x.")
+
+        if not sent_any:
+            print("Warning: No handshake payloads were sent. Capture and set AVACS_HELLO_HEX (and optionally AVACS_LOGIN_HEX).")
         self.receive_frames()
 
     def receive_frames(self):
